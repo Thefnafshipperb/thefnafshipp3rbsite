@@ -1,32 +1,22 @@
 const express = require('express');
+const Unblocker = require('unblocker');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Built-in Middleware: Parses incoming JSON requests
-app.use(express.json());
+const unblocker = new Unblocker({ prefix: '/proxy/' });
 
-// 2. Custom Middleware: Logs request details
-const requestLogger = (req, res, next) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${req.method} request made to: ${req.url}`);
-    
-    // Crucial: Call next() to pass control to the next middleware/route handler
-    next(); 
-};
+app.use(unblocker);
 
-// Apply the custom middleware globally to all routes
-app.use(requestLogger);
-
-// 3. Route Handler (Final Middleware)
 app.get('/', (req, res) => {
-    res.send('Welcome to your Express Middleware Server!');
+    res.send(`
+        <h1>Proxy Server Active</h1>
+        <p>To use the proxy, format your URL like this:</p>
+        <code>http://localhost:${PORT}/proxy/https://google.com</code>
+    `);
 });
 
-app.get('/api/data', (req, res) => {
-    res.json({ message: "Hello World", status: "success" });
+const server = app.listen(PORT, () => {
+    console.log(`Proxy server is running at http://localhost:${PORT}`);
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running smoothly on http://localhost:${PORT}`);
-});
+server.on('upgrade', unblocker.onUpgrade);
